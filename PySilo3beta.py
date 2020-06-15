@@ -104,7 +104,7 @@ def misp_check_for_previous_event(misp_instance, isight_alert):
     if isight_alert.Id:
         result = misp_instance.search(value=isight_alert.Id, type_attribute='text', category='External analysis')
         # If something was found in the MISP instance, then retrieve the event
-       if result:
+    if result:
             event = check_misp_all_results(result)
 
     # If no event found, search based on report URL.
@@ -369,8 +369,8 @@ def update_misp_event(misp_instance, event, isight_alert):
 
     # Lastly, publish the event without sending an alert email.
     # This command expects the event ID instead of a MISPevent as argument.
-    print('#####publishing event:', event['id])
-    PySilo_settings.logger.debug('#####publishing event: %s', event['id],isight_alert.reportId) 
+    print('#####publishing event:', event['id'])
+    PySilo_settings.logger.debug('#####publishing event: %s', event['id'],isight_alert.reportId) 
     event.attribute.add_tag('ISIGHT APIv3')                                                
     #misp_instance.publish(event['id'], alert=False)
 
@@ -488,7 +488,7 @@ def process_isight_indicator(a_json):
         # Parse the FireEye iSight report
         isight_report_instance = PySiloReport(a_json)
 
-        # If in DEBUG mode, write the iSight reports to a file.
+       # If in DEBUG mode, write the iSight reports to a file.
        if PySilo_settings.debug_mode:
             # Create the "reports" subdirectory for storing iSight reports, if it doesn't exist already.
             if not os.path.exists("Silo-reports-2020"):
