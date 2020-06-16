@@ -1,14 +1,10 @@
 #!/usr/bin/env python
-
-# pySightReport - Python class for parsing iSightReport json alerts
 #
+# pySightReport - Python class for parsing iSightReport json alerts
+#dmolina213
 # Alexander Jaeger (deralexxx)
 #
-# The MIT License (MIT) see https://github.com/deralexxx/FireMISP/blob/master/LICENSE
 #
-# For documentation of iSight indicator fields, see
-# https://docs.fireeye.com/iSight/index.html#/field_definitions and
-# https://docs.fireeye.com/iSight/index.html#/indicators
 #
 
 from datetime import datetime
@@ -42,16 +38,17 @@ class PySiloReport (object):
         self.Id = None
         self.Description = None  # Cutwail Botnet Distributes Recruitment Mass Mailings
         self.publishDate = None  # 1469544180
-        self.Type = None  # Cyber Espionage
+        self.Type = None  # email
         self.riskRating = None  # High
         self.audience = None  # Operational
-        self.intelligenceType = None  # threat / malware / vulnerability / overview
+        self.IntelligenceType = None  # threat / malware / vulnerability / overview
         self.reportLink = None  # https:#api.isightpartners.com/report/16-00011458
         self.webLink = None  # https:#mysight.isightpartners.com/report/full/16-00011458
+        self.EntityReference = None
 
         # Email-related indicators
         self.emailIdentifier = None  # Attacker
-        self.Description = None # Compromised VA Credentials   lissddzz@gmail.com
+        self.Description = "Compromised VA Credentials"  # lissddzz@gmail.com
         self.senderName = None  # lissddzz
         self.sourceDomain = None  # samyongonc.com
         self.sourceIP = None  # 184.105.137.110
@@ -128,6 +125,8 @@ class PySiloReport (object):
                 self.publishDate = int(timestamp)
         if 'Type' in p_alert_json and p_alert_json['Type'] is not None:
             self.Type = str(p_alert_json['Type'])
+        if 'EntityReference' in p_alert_json and p_alert_json['Type'] is not None:
+            self.EntityReference = str(p_alert_json['EntityReference'])
         if 'audience' in p_alert_json and p_alert_json['audience'] is not None:
             self.audience = str(p_alert_json['audience'])
         if 'intelligenceType' in p_alert_json and p_alert_json['intelligenceType'] is not None:
