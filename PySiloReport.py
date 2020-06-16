@@ -51,7 +51,7 @@ class PySiloReport (object):
 
         # Email-related indicators
         self.emailIdentifier = None  # Attacker
-        self.Description = "Compromised VA Credentials"  # lissddzz@gmail.com
+        self.Description = None # Compromised VA Credentials   lissddzz@gmail.com
         self.senderName = None  # lissddzz
         self.sourceDomain = None  # samyongonc.com
         self.sourceIP = None  # 184.105.137.110
