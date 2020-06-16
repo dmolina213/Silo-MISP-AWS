@@ -18,6 +18,7 @@ import PySilo_settings
 
 # Import our own iSight report model.
 from model.PySiloReport import PySiloReport
+#from .models import PySiloReport
 
 # Suppress insecure HTTPS request warnings.
 urllib3.disable_warnings()
@@ -33,7 +34,7 @@ def error_handling(e, a_string):
     :return:
     :rtype:
     """
-    if hasattr(e, 'message'):
+    if hasattr(e, 'Items'):
         PySilo_settings.logger.debug('%s %s', a_string, e.message)
     import traceback
     PySilo_settings.logger.debug('1 %s', e.__doc__)
@@ -64,9 +65,10 @@ def misp_process_isight_indicators(a_result):
     :type a_result:
     """
     # Process each indicator in the JSON message
-    for indicator in a_result['message']:
-        Print("#####indicator#####",indicator)
-        PySilo_settings.logger.debug('Processing report %s', indicator['reportId'])
+    print(a_result)
+    for indicator in a_result['Items']:
+        print("#####indicator#####",indicator)
+        PySilo_settings.logger.debug('Processing report %s', indicator['Id'])
 
         if PySilo_settings.use_threading:
             # Use threads to process the indicators
@@ -115,7 +117,7 @@ def misp_check_for_previous_event(misp_instance, isight_alert):
        #     event = check_misp_all_results(result)
 
     if not result:
-        PySilo_settings.logger.debug('Found no existing event for iSight report ID %s', isight_alert.reportId)
+        PySilo_settings.logger.debug('Found no existing event for iSight report ID %s', isight_alert.Id)
 
     return event
 # Update an existing MISP event.
@@ -370,7 +372,7 @@ def update_misp_event(misp_instance, event, isight_alert):
     # Lastly, publish the event without sending an alert email.
     # This command expects the event ID instead of a MISPevent as argument.
     print('#####publishing event:', event['id'])
-    PySilo_settings.logger.debug('#####publishing event: %s', event['id'],isight_alert.reportId) 
+    PySilo_settings.logger.debug('#####publishing event: %s', event['id'],isight_alert.Id) 
     event.attribute.add_tag('ISIGHT APIv3')                                                
     #misp_instance.publish(event['id'], alert=False)
 
@@ -410,7 +412,7 @@ def create_misp_event(misp_instance, isight_report_instance):
     print("#######Push event to MISP server####",my_event)
 
            
-    PySilo_settings.logger.debug('Created MISP event %s for iSight report %s', event, isight_report_instance.reportId)
+    PySilo_settings.logger.debug('Created MISP event %s for iSight report %s', event, isight_report_instance.Id)
 
     # Add default tags to the event.
     misp_instance.tag(my_event, 'Source:SILOBREAKER')
@@ -446,8 +448,8 @@ def check_misp_all_results(a_result):
     :rtype:
     """
     # PySilo_settings.logger.debug('Checking %s if it contains previous events', a_result)
-    if 'message' in a_result:
-        if a_result['message'] == 'No matches.':
+    if 'Items' in a_result:
+        if a_result['Items'] == 'No matches.':
             PySilo_settings.logger.debug('No existing MISP event found')
             # has really no event
             return False
@@ -483,18 +485,18 @@ def process_isight_indicator(a_json):
         #threading used here
         if PySilo_settings.use_threading:
             thread_limiter.acquire()
-        PySilo_settings.logger.debug("max number %s current number: ", thread_limiter._initial_value, )
+        #PySilo_settings.logger.debug("max number %s current number: ", thread_limiter._initial_value, )
 
         # Parse the FireEye iSight report
         isight_report_instance = PySiloReport(a_json)
 
        # If in DEBUG mode, write the iSight reports to a file.
-       if PySilo_settings.debug_mode:
+        if PySilo_settings.debug_mode:
             # Create the "reports" subdirectory for storing iSight reports, if it doesn't exist already.
             if not os.path.exists("Silo-reports-2020"):
                 os.makedirs("Silo-reports-2020")
             f = open("Silo-reports-2020/" + isight_report_instance.Id, 'a')
-             Write the iSight report into the "reports" subdirectory.
+            # Write the iSight report into the "reports" subdirectory.
             PySilo_settings.logger.debug('creating report report ID %s in reports/', isight_report_instance.Id)
             f.write(json.dumps(a_json, sort_keys=True, indent=4, separators=(',', ': ')))
             f.close()
@@ -560,12 +562,12 @@ def get_misp_instance():
         return ExpandedPyMISP(PySilo_settings.misp_url, PySilo_settings.misp_key, PySilo_settings.misp_verifycert,
                               proxies=misp_proxies)
         #return PyMISP(PySilo_settings.misp_url, PySilo_settings.misp_key, PySilo_settings.misp_verifycert,
-        #              proxies=misp_proxies)
+
     except Exception:
         PySilo_settings.logger.debug('Unexpected error in MISP init: %s', sys.exc_info())
         return False
 #Create a new MISP event.
-def create_misp_event(misp_instance):
+def create_misp_event(misp_instance,isight_report_instance):
     # No MISP event for this iSight report ID exists yet.
     # Alas, create a new MISP event.
 
@@ -591,39 +593,39 @@ def create_misp_event(misp_instance):
     else:
         event.threat_level_id = 4  # Unknown
     event.analysis = 2  # Completed
-    event.info = "iSIGHT: " + isight_report_instance.title
-    event.date = date
+    event.info = "iSIGHT: " + isight_report_instance.Description
+    #event.date = date
 
     # Push the event to the MISP server.
     my_event = misp_instance.add_event(event, pythonify=True)
     print("#######Push event to MISP server####",my_event)
 
            
-    PySilo_settings.logger.debug('Created MISP event %s for iSight report %s', event, isight_report_instance.reportId)
+    PySilo_settings.logger.debug('Created MISP event %s for iSight report %s', event, isight_report_instance.Id)
 
     # Add default tags to the event.
     misp_instance.tag(my_event, 'Source:SILOBREAKER')
     #misp_instance.tag(my_event, 'basf:source="iSight"')
     misp_instance.tag(my_event, 'CTI feed: SILOBREAKER')
     misp_instance.tag(my_event, 'tlp:amber')
-    #misp_instance.tag(my_event, 'report id', isight_report_instance.reportId)
+    #misp_instance.tag(my_event, 'report id', isight_report_instance.Id)
     
                                                                      
 
-    Use some iSight ThreatScapes for event tagging. Reports can have multiple ThreatScapes.
+    #Use some iSight ThreatScapes for event tagging. Reports can have multiple ThreatScapes.
     if 'Cyber Espionage' in isight_report_instance.ThreatScape:
         # VERIS distinguishes between external, internal or partner actors. This difference is not yet implemented in
         # MISP. External would be most likely.
-        #misp_instance.tag(my_event, 'veris:actor:external:motive="Espionage"')
-        #misp_instance.tag(my_event, 'veris:actor:motive="Espionage"')
+        misp_instance.tag(my_event, 'veris:actor:external:motive="Espionage"')
+        misp_instance.tag(my_event, 'veris:actor:motive="Espionage"')
     if 'Hacktivism' in isight_report_instance.ThreatScape:
-        #misp_instance.tag(my_event, 'veris:actor:external:variety="Activist"')
+        misp_instance.tag(my_event, 'veris:actor:external:variety="Activist"')
     if 'Critical Infrastructure' in isight_report_instance.ThreatScape:
-       # misp_instance.tag(my_event, 'basf:technology="OT"')
+        misp_instance.tag(my_event, 'basf:technology="OT"')
     if 'Cyber Physical' in isight_report_instance.ThreatScape:
-        #misp_instance.tag(my_event, 'basf:technology="OT"')
+        misp_instance.tag(my_event, 'basf:technology="OT"')
     if 'Cyber Crime' in isight_report_instance.ThreatScape:
-        #misp_instance.tag(my_event, 'veris:actor:external:variety="Organized crime"')
+        misp_instance.tag(my_event, 'veris:actor:external:variety="Organized crime"')
      
  
 ################################start################################
@@ -636,7 +638,7 @@ args = parser.parse_args()
 
 url = parse.quote(args.URL, safe=":/?&=")
 
-with open("../secrets.json") as f: # The secrets file has the same format as the node example.
+with open("secrets.json") as f: # The secrets file has the same format as the node example.
     secrets = json.load(f)
 
 sharedKey = secrets["SharedKey"]
@@ -682,6 +684,10 @@ with urllib.request.urlopen(req) as response:
 # Pretty print the data
 
 responseObject = json.loads(responseJson.decode("utf-8"))
+#print(responseObject)
+print('#######################')
 result=json.dumps(responseObject, sort_keys=True, indent=2, separators=(',', ': '))
-misp_process_isight_indicators(result)
-print(json.dumps(responseObject, sort_keys=True, indent=2, separators=(',', ': ')))
+#misp_process_isight_indicators(result)
+#print(json.dumps(responseObject, sort_keys=True, indent=2, separators=(',', ': ')))
+misp_process_isight_indicators(responseObject)
+
