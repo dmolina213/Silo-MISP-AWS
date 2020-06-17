@@ -119,9 +119,9 @@ def misp_process_isight_indicators(a_result):
 
     # Process each indicator in the JSON message
 
-    for indicator in a_result['message']:
+    for indicator in a_result['Items']:
         Print("#####indicator#####",indicator)
-        PySilo_settings.logger.debug('Processing report %s', indicator['reportId'])
+        PySilo_settings.logger.debug('Processing report %s', indicator['Id'])
 
         if PySilo_settings.use_threading:
             # Use threads to process the indicators
